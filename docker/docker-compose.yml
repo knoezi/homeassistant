@@ -1,0 +1,100 @@
+version: "3.3"
+services:
+  deconz:
+    image: marthoc/deconz:latest
+    container_name: deconz
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /volume1/docker/deconz:/root/.local/share/dresden-elektronik/deCONZ
+    devices:
+      - /dev/ttyUSB-ZBee
+    environment:
+      - DECONZ_WEB_PORT=7080
+      - DECONZ_WS_PORT=7443
+      - DEBUG_INFO=1
+      - DEBUG_APS=0
+      - DEBUG_ZCL=0
+      - DEBUG_ZDP=0
+      - DEBUG_OTAU=0
+      - TZ=Europe/Berlin
+  zwave-js-server:
+    image: zwavejs/zwavejs2mqtt:latest
+    container_name: zjs
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+       - /volume1/docker/zjs:/usr/src/app/store
+    devices:
+      - /dev/ttyUSB-ZWave
+    environment:
+      TZ: "Europe/Berlin"
+  homeassistant:
+    image: homeassistant/home-assistant:latest
+    container_name: homeassistant
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /volume1/docker/homeassistant:/config
+    devices:
+      - /dev/ttyUSB-ZWave
+      - /dev/ttyACM0
+      - /dev/ttyACM2
+    environment:
+      - TZ=Europe/Berlin
+      - LANG=C.UTF-8
+      - S6_BEHAVIOUR_IF_STAGE2_FAILS=2
+      - S6_CMD_WAIT_FOR_SERVICES=1
+      - GPG_KEY=E3FF2839C048B25C084DEBE9B26995E310250568
+      - PYTHON_VERSION=3.8.6
+      - PYTHON_PIP_VERSION=20.2.3
+      - WHEELS_LINKS=wheels.home-assistant.io/alpine-3.12/amd64/
+      - S6_SERVICES_GRACETIME=60000
+    depends_on:
+      - deconz
+      - zwave-js-server
+      - mosquitto
+      - influxdb
+      - grafana
+  nodered:
+    image: nodered/node-red
+    container_name: nodered
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /volume1/docker/nodered:/data
+    environment:
+      - TZ=Europe/Berlin
+      - LANG=C.UTF-8
+    depends_on:
+      - homeassistant
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /volume1/docker/influxdb:/var/lib/influxdb2
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /volume1/docker/grafana:/var/lib/grafana:rw
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    network_mode: host
+    restart: always
+    privileged: true
+    volumes:
+      - /volume1/docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - /volume1/docker/mosquitto/data:/mosquitto/data
+      - /volume1/docker/mosquitto/log:/mosquitto/log
