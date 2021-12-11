@@ -1,0 +1,74 @@
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+homeassistant:
+  # Name of the location where Home Assistant is running
+  name: Familie Knoezinger
+  # Location required to calculate the time the sun rises and sets
+  latitude: !secret homeassistant_latitude
+  longitude: !secret homeassistant_longitude
+  elevation: 550
+  # 'metric' for Metric, 'imperial' for Imperial
+  unit_system: metric
+  currency: EUR
+  # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  time_zone: Europe/Berlin
+
+  external_url: !secret homeassistant_external_url
+  internal_url: !secret homeassistant_internal_url
+
+  auth_providers:
+    - type: homeassistant
+
+system_log:
+  max_entries: 60
+
+## TTS ##################################################################################
+tts:
+  - platform: google_translate
+    language: "de"
+
+influxdb:
+  api_bersion: 2
+  ssl: false
+  host: 192.168.177.2
+  port: 8086
+  token: KbERfJYxd8VKW608yio7SDN_mAefQ6RxDOSEsjWns7HfcohHq0PeqmkY1tqZKGg3m-y9hZZH3WQrm1nWkJVAsQ==
+  organization: home
+  bucket: HomeAssistant
+
+remote:
+  - platform: hamony
+    name: Harmony
+    host: harmonyhub.fritz.box
+    activity: Watch TV
+    activity: Watch Netflix
+    activity: Watch Apple TV
+
+hue:
+  brdiges:
+    - host: philips-hue.fritz.box
+
+homematic:
+  interfaces:
+    wired:
+      host: ccu3-webui.fritz.box
+      port: 2000
+      resolvenames: "jason"
+      username: !secret homematic_username
+      password: !secret homematic_password
+
+camera:
+  - platform: xiaomi_clou_map_extractor
+    host: roborock-vaccum.fritz.box
+    token: !secret xiaomi_roborock-s7_token
+    username: !secret xiaomi_portal_username
+    password: !secret xiaomi_portal_password
+    draw: ['all']
+    attributes:
+      - calibration_points
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
